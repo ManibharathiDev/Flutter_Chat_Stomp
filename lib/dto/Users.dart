@@ -23,6 +23,9 @@ class Users
       );
     }
 
+    static Map<String, dynamic> toJson(Users value) =>
+        {'id': value.id, 'profileName': value.profileName,'name':value.name,'status':value.status,'email':value.email};
+
     // factory Users.fromJson(Map<String, dynamic> json) {
     //   return switch (json) {
     //     {

@@ -8,15 +8,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dto/Chat.dart';
 
-import 'package:stomp_dart_client/parser.dart';
-import 'package:stomp_dart_client/sock_js/sock_js_parser.dart';
-import 'package:stomp_dart_client/sock_js/sock_js_utils.dart';
 import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
-import 'package:stomp_dart_client/stomp_exception.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
-import 'package:stomp_dart_client/stomp_handler.dart';
-import 'package:stomp_dart_client/stomp_parser.dart';
 
 late String senderId;
 late String recipientId;
@@ -32,7 +26,7 @@ class ChatRoom extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: ChatHome(),
+      home: const ChatHome(),
     );
   }
 }
@@ -42,7 +36,6 @@ class ChatHome extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() {
-    //return _HomeState();
     return _myChatState();
   }
 }
@@ -56,20 +49,11 @@ class _myChatState extends State<ChatHome> {
   late List<Chats> chats;
   ScrollController _scrollController = new ScrollController();
 
-  // void setItems(List<Chats> data)
-  // {
-  //   setState(() {
-  //     chats = data;
-  //   });
-  // }
-
   void onConnect(StompFrame frame) {
-    print('connected...');
     stompClient.subscribe(
       destination: '/user/public',
       headers: {},
       callback: (frame) {
-        print("Hello message is received $frame");
         dynamic result = json.decode(frame.body!);
 
       },
@@ -83,12 +67,7 @@ class _myChatState extends State<ChatHome> {
         headers: {},
         callback: (frame) {
 
-          print("my message is "+frame.body!);
           dynamic data = Chats.fromJson(json.decode(frame.body!));
-
-           // dynamic result = jsonEncode(frame.body!);
-           print(data.id);
-          // print("my message is "+result);
            Chats chat = Chats(id: data.id, senderId: data.senderId, recipientId: data.recipientId, message: data.message);
           setState(() {
             chats.add(chat);
@@ -99,12 +78,6 @@ class _myChatState extends State<ChatHome> {
           }
         });
 
-    // Timer.periodic(const Duration(seconds: 10), (_) {
-    //   stompClient.send(
-    //     destination: '/app/test/endpoints',
-    //     body: json.encode({'a': 123}),
-    //   );
-    // });
   }
 
   void setMessage() {
@@ -113,32 +86,17 @@ class _myChatState extends State<ChatHome> {
       Chats chat = Chats(id: 0, senderId: senderId, recipientId: recipientId, message: chatMessage);
       chats.add(chat);
       sendChat(senderId,recipientId,chatMessage);
-      // stompClient.send(
-      //   destination: '/app/test/endpoints',
-      //   body: json.encode({'a': 123}),
-      // );
+
 
       if (_scrollController.hasClients) {
         final position = _scrollController.position.maxScrollExtent;
         _scrollController.jumpTo(position);
       }
       chatController.text = "";
-      //_scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-      // _scrollController.animateTo(
-      //   _scrollController.position.maxScrollExtent,
-      //   curve: Curves.easeOut,
-      //   duration: const Duration(milliseconds: 300),
-      // );
+
     });
 
   }
-
-  // late SharedPreferences prefs;
-  //
-  // Future<void> getPrefs()
-  // async {
-  //   prefs = await SharedPreferences.getInstance();
-  // }
 
   @override
   void initState() {
@@ -152,13 +110,12 @@ class _myChatState extends State<ChatHome> {
         url: 'http://10.10.3.16:8080/ws',
         onConnect: onConnect,
         beforeConnect: () async {
-          print('waiting to connect...');
+
           await Future.delayed(const Duration(milliseconds: 200));
-          print('connecting...');
+
         },
         onWebSocketError: (dynamic error) => print(error.toString()),
-        //stompConnectHeaders: {'Authorization': 'Bearer yourToken'},
-        //webSocketConnectHeaders: {'Authorization': 'Bearer yourToken'},
+
       ),
     );
     stompClient.activate();
@@ -171,15 +128,11 @@ class _myChatState extends State<ChatHome> {
       recipientId = prefs.getString("RECIPIENT_ID").toString();
     });
 
-    // setState(() {
-    //   senderId = prefs.getString("SENDER_ID").toString();
-    // });
   }
 
   @override
   Widget build(BuildContext context) {
-    //getPrefs();
-    // TODO: implement build
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
@@ -187,26 +140,26 @@ class _myChatState extends State<ChatHome> {
         backgroundColor: Colors.white,
         flexibleSpace: SafeArea(
           child: Container(
-            padding: EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.only(right: 16),
             child: Row(
               children: <Widget>[
                 IconButton(
                   onPressed: () {
                     //Navigator.pop(context);
                   },
-                  icon: Icon(
+                  icon: const Icon(
                     Icons.arrow_back,
                     color: Colors.black,
                   ),
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 2,
                 ),
-                CircleAvatar(
+                const CircleAvatar(
                   //backgroundImage: NetworkImage("<https://randomuser.me/api/portraits/men/5.jpg>"),
                   maxRadius: 20,
                 ),
-                SizedBox(
+                const SizedBox(
                   width: 12,
                 ),
                 Expanded(
@@ -216,10 +169,10 @@ class _myChatState extends State<ChatHome> {
                     children: <Widget>[
                       Text(
                         recipientId,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.w600),
                       ),
-                      SizedBox(
+                      const SizedBox(
                         height: 6,
                       ),
                       Text(
@@ -230,7 +183,7 @@ class _myChatState extends State<ChatHome> {
                     ],
                   ),
                 ),
-                Icon(
+                const Icon(
                   Icons.settings,
                   color: Colors.black54,
                 ),
@@ -239,17 +192,11 @@ class _myChatState extends State<ChatHome> {
           ),
         ),
       ),
-      // AppBar(
-      //   backgroundColor: Colors.red.shade900,
-      //   title: Text(
-      //     recipientId,
-      //     style: TextStyle(color: Colors.white),
-      //   ),
-      // ),
+
       body: Stack(
         children: <Widget>[
           Padding(
-              padding: EdgeInsets.only(bottom: 70),
+              padding: const EdgeInsets.only(bottom: 70),
               child: FutureBuilder<List<Chats>>(
                 future: futureChats,
                 builder: (context, snapshot) {
@@ -259,20 +206,18 @@ class _myChatState extends State<ChatHome> {
 
 
                      return buildChats(posts, "test");
-                    //return buildChats("test");
-                    //return Text(snapshot.data!.title);
+
                   } else if (snapshot.hasError) {
                     return Text('${snapshot.error}');
                   }
 
-                  // By default, show a loading spinner.
                   return const CircularProgressIndicator();
                 },
               )),
           Align(
             alignment: Alignment.bottomLeft,
             child: Container(
-              padding: EdgeInsets.only(left: 10, bottom: 10, top: 10),
+              padding: const EdgeInsets.only(left: 10, bottom: 10, top: 10),
               height: 60,
               width: double.infinity,
               color: Colors.white,
@@ -287,39 +232,39 @@ class _myChatState extends State<ChatHome> {
                         color: Colors.lightBlue,
                         borderRadius: BorderRadius.circular(30),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.add,
                         color: Colors.white,
                         size: 20,
                       ),
                     ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     width: 15,
                   ),
                   Expanded(
                     child: TextField(
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                           hintText: "Write message...",
                           hintStyle: TextStyle(color: Colors.black54),
                           border: InputBorder.none),
                       controller: chatController,
                     ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     width: 15,
                   ),
                   FloatingActionButton(
                     onPressed: () {
                       setMessage();
                     },
-                    child: Icon(
+                    backgroundColor: Colors.blue,
+                    elevation: 0,
+                    child: const Icon(
                       Icons.send,
                       color: Colors.white,
                       size: 18,
                     ),
-                    backgroundColor: Colors.blue,
-                    elevation: 0,
                   ),
                 ],
               ),
@@ -394,7 +339,7 @@ class _myChatState extends State<ChatHome> {
         final chat = chats[index];
 
         return Container(
-          padding: EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 10),
+          padding: const EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 10),
           child: Align(
             alignment: (chat.senderId == senderId
                 ? Alignment.topLeft
@@ -406,10 +351,10 @@ class _myChatState extends State<ChatHome> {
                     ? Colors.grey.shade200
                     : Colors.blue[200]),
               ),
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               child: Text(
                 chat.message,
-                style: TextStyle(fontSize: 15),
+                style: const TextStyle(fontSize: 15),
               ),
             ),
           ),
