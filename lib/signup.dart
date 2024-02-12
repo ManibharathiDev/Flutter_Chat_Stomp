@@ -14,12 +14,16 @@ class Signup extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: _signupState(),
+      home: SignupState(),
     );
   }
 }
 
-class _signupState extends StatefulWidget {
+class SignupState extends StatefulWidget {
+  static const String routeName = "/SignupState";
+
+  const SignupState({super.key});
+
   @override
   State<StatefulWidget> createState() {
     // TODO: implement createState
@@ -27,7 +31,7 @@ class _signupState extends StatefulWidget {
   }
 }
 
-class SignupHome extends State<_signupState> {
+class SignupHome extends State<SignupState> {
   final emailController = TextEditingController();
   final nameController = TextEditingController();
   final profileController = TextEditingController();
@@ -56,9 +60,8 @@ class SignupHome extends State<_signupState> {
 
       isView = "LOADING";
     });
-    saveResponse = register();
-
-
+    Future<Users> saveResponse = register();
+    saveResponse.whenComplete(() => Navigator.pop(context));
   }
 
   Future<Users> register() async {
@@ -106,112 +109,93 @@ class SignupHome extends State<_signupState> {
             style: TextStyle(color: Colors.black),
           ),
         ),
-        body: (isView == "NORMAL")
-            ? _signUpWidget(context)
-            : _loadingWidget()
-    );
+        body: (isView == "NORMAL") ? _signUpWidget(context) : _loadingWidget());
   }
 
-  Widget _signUpWidget(BuildContext context){
-      return(
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Padding(
-                padding:
-                EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
-                child: Text(
-                  "Enter Your Email ID",
-                  textAlign: TextAlign.start,
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold),
-                ),
+  Widget _signUpWidget(BuildContext context) {
+    return (Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
+          child: Text(
+            "Enter Your Email ID",
+            textAlign: TextAlign.start,
+            style: TextStyle(
+                color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(left: 16, right: 16),
+          child: TextField(
+            decoration: InputDecoration(
+                errorText: _userNamevalidate ? "Value can't be empty" : null,
+                border: const OutlineInputBorder(),
+                hintText: 'Enter your username'),
+            controller: emailController,
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
+          child: Text(
+            "Enter Your Name",
+            style: TextStyle(
+                color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+        ),
+        Padding(
+            padding: const EdgeInsets.only(left: 16, right: 16),
+            child: TextField(
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Your Name',
+                errorText: _nameValidate ? "Value can't be empty" : null,
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16),
-                child: TextField(
-                  decoration: InputDecoration(
-                      errorText:
-                      _userNamevalidate ? "Value can't be empty" : null,
-                      border: const OutlineInputBorder(),
-                      hintText: 'Enter your username'),
-                  controller: emailController,
-                ),
+              controller: nameController,
+            )),
+        const Padding(
+          padding: EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
+          child: Text(
+            "Enter Your Profile Name",
+            style: TextStyle(
+                color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold),
+          ),
+        ),
+        Padding(
+            padding: const EdgeInsets.only(left: 16, right: 16),
+            child: TextField(
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                hintText: 'Profile Name',
+                errorText: _profileNameValidate ? "Value can't be empty" : null,
               ),
-              const Padding(
-                padding:
-                EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
-                child: Text(
-                  "Enter Your Name",
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold),
-                ),
-              ),
-              Padding(
-                  padding: const EdgeInsets.only(left: 16, right: 16),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Your Name',
-                      errorText:
-                      _nameValidate ? "Value can't be empty" : null,
-                    ),
-                    controller: nameController,
-                  )),
-              const Padding(
-                padding:
-                EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
-                child: Text(
-                  "Enter Your Profile Name",
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold),
-                ),
-              ),
-              Padding(
-                  padding: const EdgeInsets.only(left: 16, right: 16),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      hintText: 'Profile Name',
-                      errorText: _profileNameValidate
-                          ? "Value can't be empty"
-                          : null,
-                    ),
-                    controller: profileController,
-                  )),
-              Padding(
-                padding: const EdgeInsets.all(8),
-                child: ElevatedButton(
-                    onPressed: () {
-                      _setData();
-                    },
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade900,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 50, vertical: 20),
-                        textStyle: const TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.bold)),
-                    child: const Text(
-                      'Signup',
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold),
-                    )),
-              )
-            ],
-          )
-      );
-  }
-  Widget _loadingWidget(){
-    return(
-        const Center(
-          child: CircularProgressIndicator(),
+              controller: profileController,
+            )),
+        Padding(
+          padding: const EdgeInsets.all(8),
+          child: ElevatedButton(
+              onPressed: () {
+                _setData();
+              },
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade900,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                  textStyle: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Signup',
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              )),
         )
-    );
+      ],
+    ));
+  }
+
+  Widget _loadingWidget() {
+    return (const Center(
+      child: CircularProgressIndicator(),
+    ));
   }
 }
