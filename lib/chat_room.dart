@@ -21,7 +21,6 @@ import 'package:stomp_dart_client/stomp_parser.dart';
 late String senderId;
 late String recipientId;
 
-
 class ChatRoom extends StatelessWidget {
   const ChatRoom({super.key});
 
@@ -48,30 +47,57 @@ class ChatHome extends StatefulWidget {
   }
 }
 
-
-
 class _myChatState extends State<ChatHome> {
-
   final chatController = TextEditingController();
   String chatMessage = "";
   late StompClient stompClient;
 
   late Future<List<Chats>> futureChats;
+  late List<Chats> chats;
+  ScrollController _scrollController = new ScrollController();
 
+  // void setItems(List<Chats> data)
+  // {
+  //   setState(() {
+  //     chats = data;
+  //   });
+  // }
 
-
-  void onConnect(StompFrame frame)
-  {
+  void onConnect(StompFrame frame) {
     print('connected...');
     stompClient.subscribe(
       destination: '/user/public',
+      headers: {},
       callback: (frame) {
-        print(frame);
-        print(frame.body);
+        print("Hello message is received $frame");
         dynamic result = json.decode(frame.body!);
-        print(result);
+
       },
     );
+
+    String receiveURL = '/user/$senderId/queue/messages';
+    print("URL is $receiveURL");
+
+    stompClient.subscribe(
+        destination: receiveURL,
+        headers: {},
+        callback: (frame) {
+
+          print("my message is "+frame.body!);
+          dynamic data = Chats.fromJson(json.decode(frame.body!));
+
+           // dynamic result = jsonEncode(frame.body!);
+           print(data.id);
+          // print("my message is "+result);
+           Chats chat = Chats(id: data.id, senderId: data.senderId, recipientId: data.recipientId, message: data.message);
+          setState(() {
+            chats.add(chat);
+          });
+          if (_scrollController.hasClients) {
+            final position = _scrollController.position.maxScrollExtent;
+            _scrollController.jumpTo(position);
+          }
+        });
 
     // Timer.periodic(const Duration(seconds: 10), (_) {
     //   stompClient.send(
@@ -81,13 +107,31 @@ class _myChatState extends State<ChatHome> {
     // });
   }
 
-  void setMessage(){
+  void setMessage() {
     setState(() {
       chatMessage = chatController.text;
-    });
-    log("message $chatMessage");
-  }
+      Chats chat = Chats(id: 0, senderId: senderId, recipientId: recipientId, message: chatMessage);
+      chats.add(chat);
+      sendChat(senderId,recipientId,chatMessage);
+      // stompClient.send(
+      //   destination: '/app/test/endpoints',
+      //   body: json.encode({'a': 123}),
+      // );
 
+      if (_scrollController.hasClients) {
+        final position = _scrollController.position.maxScrollExtent;
+        _scrollController.jumpTo(position);
+      }
+      chatController.text = "";
+      //_scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      // _scrollController.animateTo(
+      //   _scrollController.position.maxScrollExtent,
+      //   curve: Curves.easeOut,
+      //   duration: const Duration(milliseconds: 300),
+      // );
+    });
+
+  }
 
   // late SharedPreferences prefs;
   //
@@ -118,11 +162,11 @@ class _myChatState extends State<ChatHome> {
       ),
     );
     stompClient.activate();
-
   }
 
   _loadPref() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    senderId = prefs.getString("SENDER_ID").toString();
     setState(() {
       recipientId = prefs.getString("RECIPIENT_ID").toString();
     });
@@ -137,46 +181,64 @@ class _myChatState extends State<ChatHome> {
     //getPrefs();
     // TODO: implement build
     return Scaffold(
-       appBar:
-       AppBar(
-         elevation: 0,
-         automaticallyImplyLeading: false,
-         backgroundColor: Colors.white,
-         flexibleSpace: SafeArea(
-           child: Container(
-             padding: EdgeInsets.only(right: 16),
-             child: Row(
-               children: <Widget>[
-                 IconButton(
-                   onPressed: ()
-                   {
-                     //Navigator.pop(context);
-                   },
-                   icon: Icon(Icons.arrow_back,color: Colors.black,),
-                 ),
-                 SizedBox(width: 2,),
-                 CircleAvatar(
-                   //backgroundImage: NetworkImage("<https://randomuser.me/api/portraits/men/5.jpg>"),
-                   maxRadius: 20,
-                 ),
-                 SizedBox(width: 12,),
-                 Expanded(
-                   child: Column(
-                     crossAxisAlignment: CrossAxisAlignment.start,
-                     mainAxisAlignment: MainAxisAlignment.center,
-                     children: <Widget>[
-                       Text(recipientId,style: TextStyle( fontSize: 16 ,fontWeight: FontWeight.w600),),
-                       SizedBox(height: 6,),
-                       Text("Online",style: TextStyle(color: Colors.grey.shade600, fontSize: 13),),
-                     ],
-                   ),
-                 ),
-                 Icon(Icons.settings,color: Colors.black54,),
-               ],
-             ),
-           ),
-         ),
-       ),
+      appBar: AppBar(
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.white,
+        flexibleSpace: SafeArea(
+          child: Container(
+            padding: EdgeInsets.only(right: 16),
+            child: Row(
+              children: <Widget>[
+                IconButton(
+                  onPressed: () {
+                    //Navigator.pop(context);
+                  },
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: Colors.black,
+                  ),
+                ),
+                SizedBox(
+                  width: 2,
+                ),
+                CircleAvatar(
+                  //backgroundImage: NetworkImage("<https://randomuser.me/api/portraits/men/5.jpg>"),
+                  maxRadius: 20,
+                ),
+                SizedBox(
+                  width: 12,
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        recipientId,
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      SizedBox(
+                        height: 6,
+                      ),
+                      Text(
+                        "Online",
+                        style: TextStyle(
+                            color: Colors.grey.shade600, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.settings,
+                  color: Colors.black54,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
       // AppBar(
       //   backgroundColor: Colors.red.shade900,
       //   title: Text(
@@ -184,41 +246,40 @@ class _myChatState extends State<ChatHome> {
       //     style: TextStyle(color: Colors.white),
       //   ),
       // ),
-      body:
-      Stack(
+      body: Stack(
         children: <Widget>[
+          Padding(
+              padding: EdgeInsets.only(bottom: 70),
+              child: FutureBuilder<List<Chats>>(
+                future: futureChats,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    final posts = snapshot.data!;
+                    chats = snapshot.data!;
 
-          Padding(padding: EdgeInsets.only(bottom:70),
-          child: FutureBuilder<List<Chats>>(
-            future: futureChats,
 
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                final posts = snapshot.data!;
-                return buildChats(posts, "test");
-                //return Text(snapshot.data!.title);
-              } else if (snapshot.hasError) {
-                return Text('${snapshot.error}');
-              }
+                     return buildChats(posts, "test");
+                    //return buildChats("test");
+                    //return Text(snapshot.data!.title);
+                  } else if (snapshot.hasError) {
+                    return Text('${snapshot.error}');
+                  }
 
-              // By default, show a loading spinner.
-              return const CircularProgressIndicator();
-            },
-          )
-          )
-          ,
+                  // By default, show a loading spinner.
+                  return const CircularProgressIndicator();
+                },
+              )),
           Align(
             alignment: Alignment.bottomLeft,
             child: Container(
-              padding: EdgeInsets.only(left: 10,bottom: 10,top: 10),
+              padding: EdgeInsets.only(left: 10, bottom: 10, top: 10),
               height: 60,
               width: double.infinity,
               color: Colors.white,
               child: Row(
                 children: <Widget>[
                   GestureDetector(
-                    onTap: (){
-                    },
+                    onTap: () {},
                     child: Container(
                       height: 30,
                       width: 30,
@@ -226,48 +287,79 @@ class _myChatState extends State<ChatHome> {
                         color: Colors.lightBlue,
                         borderRadius: BorderRadius.circular(30),
                       ),
-                      child: Icon(Icons.add, color: Colors.white, size: 20, ),
+                      child: Icon(
+                        Icons.add,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
-                  SizedBox(width: 15,),
+                  SizedBox(
+                    width: 15,
+                  ),
                   Expanded(
                     child: TextField(
                       decoration: InputDecoration(
                           hintText: "Write message...",
                           hintStyle: TextStyle(color: Colors.black54),
-                          border: InputBorder.none
-                      ),
+                          border: InputBorder.none),
                       controller: chatController,
                     ),
                   ),
-                  SizedBox(width: 15,),
+                  SizedBox(
+                    width: 15,
+                  ),
                   FloatingActionButton(
-                    onPressed: (){
+                    onPressed: () {
                       setMessage();
                     },
-                    child: Icon(Icons.send,color: Colors.white,size: 18,),
+                    child: Icon(
+                      Icons.send,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                     backgroundColor: Colors.blue,
                     elevation: 0,
                   ),
                 ],
-
               ),
             ),
           )
-
         ],
       ),
-
-
     );
+  }
+
+  Future<Chats> sendChat(String senderId,String recipientId,String message) async {
+    final response = await http.post(
+      Uri.parse('http://10.10.3.16:8080/chat'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'senderId': senderId,
+        'recipientId':recipientId,
+        'message':message
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      // If the server did return a 201 CREATED response,
+      // then parse the JSON.
+      return Chats.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    } else {
+      // If the server did not return a 201 CREATED response,
+      // then throw an exception.
+      throw Exception('Failed to create Chats.');
+    }
   }
 
   Future<List<Chats>> fetchChats() async {
     // final response = await http
     //     .get(Uri.parse('http://10.10.3.16:8080/view_users'));
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    senderId = prefs.getString("SENDER_ID").toString();
+    // SharedPreferences prefs = await SharedPreferences.getInstance();
+    // senderId = prefs.getString("SENDER_ID").toString();
     // recipientId = prefs.getString("RECIPIENT_ID").toString();
 
     log("Sender ID $senderId");
@@ -293,9 +385,11 @@ class _myChatState extends State<ChatHome> {
     }
   }
 
-  Widget buildChats(List<Chats> chats, String s) {
+  Widget buildChats(List<Chats> data,String s) {
+
     return ListView.builder(
       itemCount: chats.length,
+      controller: _scrollController,
       itemBuilder: (context, index) {
         final chat = chats[index];
 

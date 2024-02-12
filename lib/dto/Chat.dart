@@ -22,4 +22,7 @@ class Chats {
         recipientId: addjson["recipientId"],
         message: addjson["message"]);
   }
+
+  static Map<String, dynamic> toJson(Chats value) =>
+      {'id': value.id, 'senderId': value.senderId,'recipientId':value.recipientId,'message':value.message};
 }
