@@ -101,6 +101,30 @@ class SignupHome extends State<SignupState> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+          leading: const BackButton(),
+          // actions: [
+          //   IconButton(
+          //       icon: Icon(
+          //           Icons.login,
+          //           color: const Color(0xFF0000FF),
+          //           size: 34.0),
+          //       onPressed: (){}
+          //   ),
+          //   IconButton(
+          //       icon: Icon(
+          //           Icons.favorite,
+          //           color: const Color(0xFFFF0000),
+          //           size: 34.0),
+          //       onPressed: (){}
+          //   ),
+          //   IconButton(
+          //       icon: Icon(
+          //           Icons.settings,
+          //           color: const Color(0xFF00FF00),
+          //           size: 34.0),
+          //       onPressed: (){}
+          //   ),
+          // ],
           elevation: 0,
           automaticallyImplyLeading: false,
           backgroundColor: Colors.white,
