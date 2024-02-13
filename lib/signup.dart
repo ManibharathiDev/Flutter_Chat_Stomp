@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:chat_app/MyTextFile.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
@@ -10,6 +11,7 @@ class Signup extends StatelessWidget {
     // TODO: implement build
     return MaterialApp(
       title: 'Flutter Demo',
+      color: Colors.green.shade50,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -53,15 +55,18 @@ class SignupHome extends State<SignupState> {
       _userNamevalidate = emailController.text.isEmpty;
       _nameValidate = nameController.text.isEmpty;
       _profileNameValidate = profileController.text.isEmpty;
-
       email = emailController.text;
       name = nameController.text;
       profile = profileController.text;
-
-      isView = "LOADING";
     });
-    Future<Users> saveResponse = register();
-    saveResponse.whenComplete(() => Navigator.pop(context));
+
+    if (!_userNamevalidate && !_nameValidate && !_profileNameValidate) {
+      setState(() {
+        isView = "LOADING";
+      });
+      Future<Users> saveResponse = register();
+      saveResponse.whenComplete(() => Navigator.pop(context));
+    }
   }
 
   Future<Users> register() async {
@@ -87,12 +92,9 @@ class SignupHome extends State<SignupState> {
         isView = "NORMAL";
       });
 
-      //final responseData = jsonDecode(response.body);
-
       return Users.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
     } else {
-      // If the server did not return a 201 CREATED response,
-      // then throw an exception.
+
       throw Exception('Failed to register users.');
     }
   }
@@ -100,121 +102,101 @@ class SignupHome extends State<SignupState> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        backgroundColor: Colors.green.shade50,
         appBar: AppBar(
           leading: const BackButton(),
-          // actions: [
-          //   IconButton(
-          //       icon: Icon(
-          //           Icons.login,
-          //           color: const Color(0xFF0000FF),
-          //           size: 34.0),
-          //       onPressed: (){}
-          //   ),
-          //   IconButton(
-          //       icon: Icon(
-          //           Icons.favorite,
-          //           color: const Color(0xFFFF0000),
-          //           size: 34.0),
-          //       onPressed: (){}
-          //   ),
-          //   IconButton(
-          //       icon: Icon(
-          //           Icons.settings,
-          //           color: const Color(0xFF00FF00),
-          //           size: 34.0),
-          //       onPressed: (){}
-          //   ),
-          // ],
           elevation: 0,
           automaticallyImplyLeading: false,
-          backgroundColor: Colors.white,
+          backgroundColor: Colors.green.shade300,
           title: const Text(
             'New Registration',
-            style: TextStyle(color: Colors.black),
+            style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),
           ),
         ),
         body: (isView == "NORMAL") ? _signUpWidget(context) : _loadingWidget());
   }
 
   Widget _signUpWidget(BuildContext context) {
-    return (Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
-          child: Text(
-            "Enter Your Email ID",
-            textAlign: TextAlign.start,
-            style: TextStyle(
-                color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold),
-          ),
+    return (
+        Center(
+          child: SingleChildScrollView(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    'assets/logos.png',
+                    alignment: Alignment.center,
+                    height: 200,
+                    width: 200,
+                  ),
+                  const Text(
+                    'Signup',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Colors.black, fontSize: 25),
+                  ),
+                  Padding(
+                    padding:
+                    const EdgeInsets.only(top: 16, left: 32, right: 32, bottom: 16),
+                    child: MyTextFile(controller: emailController, labelText: 'Email ID', obsCureText: false, validateText: _userNamevalidate,textInputAction: TextInputAction.next,)
+                    // child: TextField(
+                    //   decoration: InputDecoration(
+                    //       errorText: _userNamevalidate ? "Value can't be empty" : null,
+                    //       border: const OutlineInputBorder(),
+                    //       labelText: 'Email ID',
+                    //       hintText: 'Enter your username'),
+                    //   controller: emailController,
+                    // ),
+                  ),
+                  Padding(
+                      padding: const EdgeInsets.only(left: 32, right: 32, bottom: 16),
+                      child: MyTextFile(controller: nameController, labelText: 'Name of the User', obsCureText: false, validateText: _nameValidate,textInputAction: TextInputAction.next,)
+                      // child: TextField(
+                      //   decoration: InputDecoration(
+                      //     border: OutlineInputBorder(),
+                      //     labelText: 'Name of the User',
+                      //     errorText: _nameValidate ? "Value can't be empty" : null,
+                      //   ),
+                      //   controller: nameController,
+                      // )
         ),
-        Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16),
-          child: TextField(
-            decoration: InputDecoration(
-                errorText: _userNamevalidate ? "Value can't be empty" : null,
-                border: const OutlineInputBorder(),
-                hintText: 'Enter your username'),
-            controller: emailController,
-          ),
-        ),
-        const Padding(
-          padding: EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
-          child: Text(
-            "Enter Your Name",
-            style: TextStyle(
-                color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold),
-          ),
-        ),
-        Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16),
-            child: TextField(
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Your Name',
-                errorText: _nameValidate ? "Value can't be empty" : null,
+                  Padding(
+                      padding: const EdgeInsets.only(left: 32, right: 32),
+                      child: MyTextFile(controller: profileController, labelText: 'Profile Name', obsCureText: false, validateText: _profileNameValidate,textInputAction: TextInputAction.done,)
+                      // child: TextField(
+                      //   decoration: InputDecoration(
+                      //     border: const OutlineInputBorder(),
+                      //     labelText: 'Profile Name',
+                      //     errorText: _profileNameValidate ? "Value can't be empty" : null,
+                      //   ),
+                      //   controller: profileController,
+                      // )
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: ElevatedButton(
+                        onPressed: () {
+                          _setData();
+                        },
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade300,
+                            padding:
+                            const EdgeInsets.symmetric(horizontal: 50, vertical: 10),
+                            textStyle: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'Signup',
+                          style:
+                          TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                        )),
+                  )
+                ],
               ),
-              controller: nameController,
-            )),
-        const Padding(
-          padding: EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
-          child: Text(
-            "Enter Your Profile Name",
-            style: TextStyle(
-                color: Colors.black, fontSize: 15, fontWeight: FontWeight.bold),
+            ),
           ),
-        ),
-        Padding(
-            padding: const EdgeInsets.only(left: 16, right: 16),
-            child: TextField(
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                hintText: 'Profile Name',
-                errorText: _profileNameValidate ? "Value can't be empty" : null,
-              ),
-              controller: profileController,
-            )),
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: ElevatedButton(
-              onPressed: () {
-                _setData();
-              },
-              style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade900,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                  textStyle: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.bold)),
-              child: const Text(
-                'Signup',
-                style:
-                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              )),
         )
-      ],
-    ));
+
+    );
   }
 
   Widget _loadingWidget() {

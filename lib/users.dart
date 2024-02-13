@@ -58,7 +58,7 @@ class _myUserState extends State<UserHome> {
     // TODO: implement build
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.red.shade900,
+        backgroundColor: Colors.green.shade300,
         title: Text(
           'Online Users',
           style: TextStyle(color: Colors.white),
