@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'package:chat_app/chat_room.dart';
+import 'package:chat_app/models/ChatData.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:chat_app/signup.dart';
@@ -24,6 +27,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     var routes = <String, WidgetBuilder>{
       SignupState.routeName: (BuildContext context) => const SignupState(),
+      UserHome.routeName:(BuildContext context) => const UserHome(),
+      ChatHome.routeName:(BuildContext context) => const ChatHome(),
     };
 
     return MaterialApp(
@@ -45,11 +50,11 @@ class Home extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
     //return _HomeState();
-    return _myHomeState();
+    return LoginState();
   }
 }
 
-class _myHomeState extends State<Home> {
+class LoginState extends State<Home> {
   String loginId = "No text is available";
   bool _userNamevalidate = false;
   bool _isLoading = false;
@@ -70,31 +75,47 @@ class _myHomeState extends State<Home> {
     }
   }
 
+  Future<void> showAlert() async{
+    showDialog(context: context, builder: (BuildContext context) => AlertDialog(
+      title: const Text('Error'),
+      content: const Text('Invalid User Name'),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.pop(context, 'Cancel'),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, 'OK'),
+          child: const Text('OK'),
+        ),
+      ],
+    )
+    );
+  }
+
   Future<void> _setText() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    setState(() {
-      _userNamevalidate = loginController.text.isEmpty;
-      loginId = loginController.text;
-
-      if (!_userNamevalidate) {
-        _isLoading = true;
-        Future<Users> loginResponse = auth();
-        loginResponse.then((value) {
-          prefs.setString('SENDER_ID', loginId);
-          _isLoading = false;
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => MyUsers(loginId: loginId)));
-        }).catchError((error)
-        {
-          print("User Not Found");
+    _userNamevalidate = loginController.text.isEmpty;
+    loginId = loginController.text;
+    if (!_userNamevalidate) {
+      _isLoading = true;
+      Future<Users> loginResponse = auth();
+      loginResponse.then((value) {
+        // prefs.setString('SENDER_ID', loginId);
+        setState(() {
           _isLoading = false;
         });
-      }
-    });
+        Navigator.pushNamed(context, UserHome.routeName,arguments: ChatData(loginId, ''));
+      }).catchError((error) {
+        setState(() {
+          _isLoading = false;
+        });
+        showAlert();
+      });
+    }
   }
+
+
 
   Widget loginWidget() {
     return (Center(

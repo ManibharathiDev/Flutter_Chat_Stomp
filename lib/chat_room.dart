@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:chat_app/users.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,66 +10,60 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dto/Chat.dart';
 
 import 'package:stomp_dart_client/stomp.dart';
-import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
+
+import 'models/ChatData.dart';
 
 late String senderId;
 late String recipientId;
 
-class ChatRoom extends StatelessWidget {
-  const ChatRoom({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const ChatHome(),
-    );
-  }
-}
+late ChatData chatData;
 
 class ChatHome extends StatefulWidget {
   const ChatHome({super.key});
+  static const String routeName = "/ChatHome";
 
   @override
   State<StatefulWidget> createState() {
-    return _myChatState();
+    return MyChatState();
   }
 }
 
-class _myChatState extends State<ChatHome> {
+class MyChatState extends State<ChatHome> {
   final chatController = TextEditingController();
   String chatMessage = "";
-  late StompClient stompClient;
+
+  // late StompClient stompClient;
 
   late Future<List<Chats>> futureChats;
   late List<Chats> chats;
-  ScrollController _scrollController = new ScrollController();
+  final ScrollController _scrollController = ScrollController();
 
-  void onConnect(StompFrame frame) {
+
+  void onConnects() {
+    print("Tried to subscript");
+
     stompClient.subscribe(
       destination: '/user/public',
       headers: {},
       callback: (frame) {
         dynamic result = json.decode(frame.body!);
-
       },
     );
 
-    String receiveURL = '/user/$senderId/queue/messages';
+    String receiveURL = '/user/${chatData.senderId}/queue/messages';
     print("URL is $receiveURL");
 
     stompClient.subscribe(
         destination: receiveURL,
         headers: {},
         callback: (frame) {
-
           dynamic data = Chats.fromJson(json.decode(frame.body!));
-           Chats chat = Chats(id: data.id, senderId: data.senderId, recipientId: data.recipientId, message: data.message);
+          Chats chat = Chats(
+              id: data.id,
+              senderId: data.senderId,
+              recipientId: data.recipientId,
+              message: data.message);
           setState(() {
             chats.add(chat);
           });
@@ -77,35 +72,90 @@ class _myChatState extends State<ChatHome> {
             _scrollController.jumpTo(position);
           }
         });
+  }
 
+  void onConnect(StompFrame frame) {
+    stompClient.subscribe(
+      destination: '/user/public',
+      headers: {},
+      callback: (frame) {
+        dynamic result = json.decode(frame.body!);
+      },
+    );
+
+    String receiveURL = '/user/${chatData.senderId}/queue/messages';
+    print("URL is $receiveURL");
+
+    stompClient.subscribe(
+        destination: receiveURL,
+        headers: {},
+        callback: (frame) {
+          dynamic data = Chats.fromJson(json.decode(frame.body!));
+          Chats chat = Chats(
+              id: data.id,
+              senderId: data.senderId,
+              recipientId: data.recipientId,
+              message: data.message);
+          setState(() {
+            chats.add(chat);
+          });
+          if (_scrollController.hasClients) {
+            final position = _scrollController.position.maxScrollExtent;
+            _scrollController.jumpTo(position);
+          }
+        });
   }
 
   void setMessage() {
     setState(() {
       chatMessage = chatController.text;
-      Chats chat = Chats(id: 0, senderId: senderId, recipientId: recipientId, message: chatMessage);
+      Chats chat = Chats(
+          id: 0,
+          senderId: chatData.senderId,
+          recipientId: chatData.recipientId,
+          message: chatMessage);
       chats.add(chat);
-      sendChat(senderId,recipientId,chatMessage);
-
+      sendChat(chatMessage);
 
       if (_scrollController.hasClients) {
         final position = _scrollController.position.maxScrollExtent;
         _scrollController.jumpTo(position);
       }
       chatController.text = "";
-
     });
+  }
 
+  @override
+  void didChangeDependencies() {
+    // TODO: implement didChangeDependencies
+    super.didChangeDependencies();
+    setState(() {
+      chatData = ModalRoute.of(context)!.settings.arguments as ChatData;
+    });
+    if (stompClient.connected && stompClient.isActive) {
+      onConnects();
+    } else {
+      print('Stomp Client not available');
+    }
   }
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    _loadPref();
-    futureChats = fetchChats();
 
-    stompClient = StompClient(
+
+
+    print("Connection Status => ${stompClient.connected}");
+
+    print("Active Status => ${stompClient.isActive}");
+
+    // if (stompClient.connected && stompClient.isActive) {
+    //   onConnects();
+    // } else {
+    //   print('Stomp Client not available');
+    // }
+    //futureChats = fetchChats();
+    /*stompClient = StompClient(
       config: StompConfig.sockJS(
         url: 'http://10.10.3.16:8080/ws',
         onConnect: onConnect,
@@ -118,20 +168,14 @@ class _myChatState extends State<ChatHome> {
 
       ),
     );
-    stompClient.activate();
-  }
-
-  _loadPref() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    senderId = prefs.getString("SENDER_ID").toString();
-    setState(() {
-      recipientId = prefs.getString("RECIPIENT_ID").toString();
-    });
-
+    stompClient.activate();*/
   }
 
   @override
   Widget build(BuildContext context) {
+    // setState(() {
+    //   chatData = ModalRoute.of(context)!.settings.arguments as ChatData;
+    // });
 
     return Scaffold(
       appBar: AppBar(
@@ -145,7 +189,7 @@ class _myChatState extends State<ChatHome> {
               children: <Widget>[
                 IconButton(
                   onPressed: () {
-                    //Navigator.pop(context);
+                    Navigator.pop(context);
                   },
                   icon: const Icon(
                     Icons.arrow_back,
@@ -168,7 +212,7 @@ class _myChatState extends State<ChatHome> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       Text(
-                        recipientId,
+                        chatData.recipientId,
                         style: const TextStyle(
                             fontSize: 16, fontWeight: FontWeight.w600),
                       ),
@@ -192,25 +236,20 @@ class _myChatState extends State<ChatHome> {
           ),
         ),
       ),
-
       body: Stack(
         children: <Widget>[
           Padding(
               padding: const EdgeInsets.only(bottom: 70),
               child: FutureBuilder<List<Chats>>(
-                future: futureChats,
+                future: fetchChats(),
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
                     final posts = snapshot.data!;
                     chats = snapshot.data!;
-
-
-                     return buildChats(posts, "test");
-
+                    return buildChats(posts, "test");
                   } else if (snapshot.hasError) {
                     return Text('${snapshot.error}');
                   }
-
                   return const CircularProgressIndicator();
                 },
               )),
@@ -275,16 +314,16 @@ class _myChatState extends State<ChatHome> {
     );
   }
 
-  Future<Chats> sendChat(String senderId,String recipientId,String message) async {
+  Future<Chats> sendChat(String message) async {
     final response = await http.post(
       Uri.parse('http://10.10.3.16:8080/chat'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode(<String, String>{
-        'senderId': senderId,
-        'recipientId':recipientId,
-        'message':message
+        'senderId': chatData.senderId,
+        'recipientId': chatData.recipientId,
+        'message': message
       }),
     );
 
@@ -300,17 +339,8 @@ class _myChatState extends State<ChatHome> {
   }
 
   Future<List<Chats>> fetchChats() async {
-    // final response = await http
-    //     .get(Uri.parse('http://10.10.3.16:8080/view_users'));
-
-    // SharedPreferences prefs = await SharedPreferences.getInstance();
-    // senderId = prefs.getString("SENDER_ID").toString();
-    // recipientId = prefs.getString("RECIPIENT_ID").toString();
-
-    log("Sender ID $senderId");
-    log("Recipient ID $recipientId");
-    var url =
-        Uri.parse("http://10.10.3.16:8080/message/$senderId/$recipientId");
+    var url = Uri.parse(
+        "http://10.10.3.16:8080/message/${chatData.senderId}/${chatData.recipientId}");
     log("API URL $url");
     final response =
         await http.get(url, headers: {"Content-Type": "application/json"});
@@ -330,8 +360,7 @@ class _myChatState extends State<ChatHome> {
     }
   }
 
-  Widget buildChats(List<Chats> data,String s) {
-
+  Widget buildChats(List<Chats> data, String s) {
     return ListView.builder(
       itemCount: chats.length,
       controller: _scrollController,
@@ -339,15 +368,16 @@ class _myChatState extends State<ChatHome> {
         final chat = chats[index];
 
         return Container(
-          padding: const EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 10),
+          padding:
+              const EdgeInsets.only(left: 14, right: 14, top: 10, bottom: 10),
           child: Align(
-            alignment: (chat.senderId == senderId
+            alignment: (chat.senderId == chatData.senderId
                 ? Alignment.topLeft
                 : Alignment.topRight),
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: (chat.senderId == senderId
+                color: (chat.senderId == chatData.senderId
                     ? Colors.grey.shade200
                     : Colors.blue[200]),
               ),
