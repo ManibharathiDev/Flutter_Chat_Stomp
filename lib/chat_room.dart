@@ -5,13 +5,12 @@ import 'dart:developer';
 import 'package:chat_app/users.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dto/Chat.dart';
 
-import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
 
+import 'dto/Users.dart';
 import 'models/ChatData.dart';
 
 late String senderId;
@@ -21,6 +20,7 @@ late ChatData chatData;
 
 class ChatHome extends StatefulWidget {
   const ChatHome({super.key});
+
   static const String routeName = "/ChatHome";
 
   @override
@@ -32,22 +32,70 @@ class ChatHome extends StatefulWidget {
 class MyChatState extends State<ChatHome> {
   final chatController = TextEditingController();
   String chatMessage = "";
+  String userStatus = "offline";
 
   // late StompClient stompClient;
 
   late Future<List<Chats>> futureChats;
+  late Future<Users> futureUserStatus;
   late List<Chats> chats;
   final ScrollController _scrollController = ScrollController();
 
-
   void onConnects() {
-    print("Tried to subscript");
+    stompClient.subscribe(
+        destination: '/user/${chatData.recipientId}/status',
+        headers: {},
+        callback: (frame) {
+          dynamic data = Users.fromJson(json.decode(frame.body!));
+          Users user = Users(
+              id: data.id,
+              profileName: data.profileName,
+              name: data.name,
+              status: data.status,
+              email: data.email);
+          setState(() {
+            userStatus = (user.status == 1) ? "Online" : "Offline";
+          });
+        });
 
     stompClient.subscribe(
       destination: '/user/public',
       headers: {},
       callback: (frame) {
-        dynamic result = json.decode(frame.body!);
+        dynamic data = Users.fromJson(json.decode(frame.body!));
+        print('Public status Received');
+        Users user = Users(
+            id: data.id,
+            profileName: data.profileName,
+            name: data.name,
+            status: data.status,
+            email: data.email);
+        setState(() {
+          if (chatData.recipientId == user.email)
+          {
+            userStatus = (user.status == 1) ? "Online" : "Offline";
+          }
+        });
+      },
+    );
+
+    stompClient.subscribe(
+      destination: '/user/disconnect',
+      headers: {},
+      callback: (frame) {
+        dynamic data = Users.fromJson(json.decode(frame.body!));
+        print('Public status Received');
+        Users user = Users(
+            id: data.id,
+            profileName: data.profileName,
+            name: data.name,
+            status: data.status,
+            email: data.email);
+        setState(() {
+          if (chatData.recipientId == user.email) {
+            userStatus = (user.status == 1) ? "Online" : "Offline";
+          }
+        });
       },
     );
 
@@ -137,13 +185,13 @@ class MyChatState extends State<ChatHome> {
     } else {
       print('Stomp Client not available');
     }
+
+    fetchUserStatus(chatData.recipientId);
   }
 
   @override
   void initState() {
     super.initState();
-
-
 
     print("Connection Status => ${stompClient.connected}");
 
@@ -220,7 +268,7 @@ class MyChatState extends State<ChatHome> {
                         height: 6,
                       ),
                       Text(
-                        "Online",
+                        userStatus,
                         style: TextStyle(
                             color: Colors.grey.shade600, fontSize: 13),
                       ),
@@ -312,6 +360,32 @@ class MyChatState extends State<ChatHome> {
         ],
       ),
     );
+  }
+
+  Future<Users> fetchUserStatus(String email) async {
+    var url = Uri.parse("http://10.10.3.16:8080/user/status/$email");
+    log("API URL $url");
+    final response =
+        await http.get(url, headers: {"Content-Type": "application/json"});
+
+    if (response.statusCode == 200) {
+      Users users =
+          Users.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+      if (users.status == 1) {
+        setState(() {
+          userStatus = "Online";
+        });
+      } else {
+        setState(() {
+          userStatus = "Offline";
+        });
+      }
+      return Users.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    } else {
+      // If the server did not return a 200 OK response,
+      // then throw an exception.
+      throw Exception('Failed to load album');
+    }
   }
 
   Future<Chats> sendChat(String message) async {

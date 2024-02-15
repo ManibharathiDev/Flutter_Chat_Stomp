@@ -28,7 +28,9 @@ class UserHome extends StatefulWidget {
 class UsersState extends State<UserHome> {
   late Future<List<Users>> futureUsers;
 
-  void onConnect(StompFrame frame) {}
+  void onConnect(StompFrame frame) {
+    print("Stomp is Connected");
+  }
 
   @override
   void initState() {
